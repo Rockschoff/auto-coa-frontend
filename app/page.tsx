@@ -1,65 +1,111 @@
-import Image from "next/image";
+'use client';
+
+import { Session } from "next-auth";
+import { useSession, signIn } from "next-auth/react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Menu, ChevronLeft, ChevronRight, BarChart2, Table, Upload } from "lucide-react";
+import FileUpload from "@/components/FileUpload";
+import DataTab from "@/components/DataTab";
+
+function MainApp({ session }: { session: Session | null }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [activeTab, setActiveTab] = useState("insights");
+  const testSession = {
+    organization_id : "205e3e76-5005-44bf-9e62-4d7c954775a7",
+    tenant_id : "614d4a59-100a-4c66-87b3-123fa7a2116e"
+  }
+
+  const tabs = [
+    { id: "insights", label: "View Insights", icon: <BarChart2 className="w-4 h-4" /> },
+    { id: "data", label: "View Data", icon: <Table className="w-4 h-4" /> },
+    { id: "upload", label: "Upload Files", icon: <Upload className="w-4 h-4" /> },
+  ];
+
+  return (
+    <div className="flex h-screen w-screen bg-gray-50">
+      {/* Sidebar */}
+      <div
+        className={`flex flex-col bg-white border-r transition-all duration-300 ${
+          collapsed ? "w-16" : "w-64"
+        }`}
+      >
+        <div className="flex items-center justify-between p-3 border-b">
+          {!collapsed && <h2 className="font-semibold text-lg">Dashboard</h2>}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCollapsed(!collapsed)}
+            className="ml-auto"
+          >
+            {collapsed ? <ChevronRight /> : <ChevronLeft />}
+          </Button>
+        </div>
+
+        <nav className="flex-1 mt-2">
+          {tabs.map((tab) => (
+            <Button
+              key={tab.id}
+              variant={activeTab === tab.id ? "secondary" : "ghost"}
+              className="w-full justify-start gap-2"
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.icon}
+              {!collapsed && tab.label}
+            </Button>
+          ))}
+        </nav>
+
+        <div className={`p-3 border-t ${collapsed ? "flex justify-center" : ""}`}>
+          <Button
+            className={`${
+              collapsed ? "w-10 h-10 p-0" : "w-full flex items-center justify-center gap-2"
+            }`}
+            variant="outline"
+          >
+            <Upload className="w-5 h-5" />
+            {!collapsed && <span>Re-run Pending Files</span>}
+          </Button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 p-6">
+        <Card className="w-full h-full flex items-center justify-center text-gray-500 text-lg overflow-scroll overflow-x-scroll">
+          {activeTab === "insights" && <div>Insights Placeholder</div>}
+          {activeTab === "data" && <DataTab organization_id={testSession.organization_id}/>}
+          {activeTab === "upload" && <FileUpload organization_id={testSession.organization_id} tenant_id={testSession.tenant_id}/>}
+        </Card>
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+  const { data: session, status } = useSession();
+
+  if (status === "loading") {
+    return (
+      <main className="flex items-center justify-center h-screen bg-gray-100">
+        <div>Loading...</div>
       </main>
-    </div>
+    );
+  }
+
+  if (/*status === "authenticated"*/true) {
+    return (
+      <main className="bg-gray-100 w-screen h-screen">
+        <MainApp session={session} />
+      </main>
+    );
+  }
+
+  return (
+    <main className="flex flex-col items-center justify-center h-screen bg-amber-100">
+      <h1 className="text-2xl font-semibold mb-3">Access Denied</h1>
+      <p className="mb-4 text-gray-700">You must be signed in to view this application.</p>
+      <Button onClick={() => signIn("microsoft-entra-id")}>Login via Microsoft</Button>
+    </main>
   );
 }

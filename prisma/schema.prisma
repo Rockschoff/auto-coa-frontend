@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+// 1. Change this to "postgresql" instead of "snowflake"
+datasource db {
+    provider = "postgresql" // Natively supported by Prisma
+    url      = env("DATABASE_URL")
+}
+
+model Organization {
+    id                 String   @id @default(cuid())
+    organization_name  String
+    tenantId           String   @unique // Tenant ID is the key
+    permissionsGranted Boolean  @default(false)
+    Watchlist          String[] // List of emails addresses to watch
+    users              User[]
+}
+
+model User {
+    id             String        @id @default(cuid())
+    userEmail      String        @unique
+    userName       String?
+    // Relation to NextAuth models (optional but good practice)
+    account        Account?
+    session        Session?
+    // Relation to an Organization (if users belong to one)
+    organization   Organization? @relation(fields: [organizationId], references: [id])
+    organizationId String?
+}
+
+model AttachmentsRead {
+    id                 String   @id @default(cuid()) // Use 'id' as the standard primary key
+    tenantId           String
+    sourceEmailAddress String // Sender of the email
+    targetEmailAddress String // The "watched" inbox
+    emailData          String? // Can be large, consider if needed
+    attachmentId       String // From graph API
+    attachmentFileName String
+    AWSS3Objectid      String? // Link to the S3 doc
+    isCOA              String // "true", "false", "pending"
+    Confidence         String // "high", "medium", "low"
+    createdAt          DateTime @default(now())
+
+    // This creates the one-to-many relationship
+    CoaData CoaData[]
+}
+
+model CoaData {
+    id           String   @id @default(cuid()) // Use 'id' as the standard primary key
+    COADate      String?
+    Sendername   String
+    productName  String
+    testName     String
+    testResult   String // "pass", "fail"
+    testSpecs    String?
+    testValue    String? // Store all as string for simplicity
+    testComments String?
+    Confidence   String // "high", "medium", "low"
+    createdAt    DateTime @default(now())
+
+    // This is the foreign key
+    attachment   AttachmentsRead @relation(fields: [attachmentId], references: [id])
+    attachmentId String // Foreign key field
+}
+
+// --- NextAuth.js Required Models ---
+
+model Account {
+    id                String  @id @default(cuid())
+    userId            String  @unique
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String? @db.Text
+    access_token      String? @db.Text
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String? @db.Text
+    session_state     String?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerAccountId])
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String   @unique
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
