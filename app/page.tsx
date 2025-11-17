@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Menu, ChevronLeft, ChevronRight, BarChart2, Table, Upload } from "lucide-react";
 import FileUpload from "@/components/FileUpload";
 import DataTab from "@/components/DataTab";
+import InsightsTab from "@/components/InsightsTab";
 
 function MainApp({ session }: { session: Session | null }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -73,7 +74,7 @@ function MainApp({ session }: { session: Session | null }) {
       {/* Main Content */}
       <div className="flex-1 p-6">
         <Card className="w-full h-full flex items-center justify-center text-gray-500 text-lg overflow-scroll overflow-x-scroll">
-          {activeTab === "insights" && <div>Insights Placeholder</div>}
+          {activeTab === "insights" && <InsightsTab organization_id={testSession.organization_id}/>}
           {activeTab === "data" && <DataTab organization_id={testSession.organization_id}/>}
           {activeTab === "upload" && <FileUpload organization_id={testSession.organization_id} tenant_id={testSession.tenant_id}/>}
         </Card>

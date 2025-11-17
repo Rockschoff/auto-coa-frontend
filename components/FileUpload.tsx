@@ -189,23 +189,23 @@ export default function FileUpload({ organization_id, tenant_id }: FileUploadPro
           </Badge>
         ),
       },
-      {
-        accessorKey: "confidence",
-        header: "Confidence",
-        cell: ({ row }) => (
-          <Badge
-            variant={
-              row.original.confidence === "high"
-                ? "default"
-                : row.original.confidence === "medium"
-                ? "secondary"
-                : "destructive"
-            }
-          >
-            {row.original.confidence}
-          </Badge>
-        ),
-      },
+    //   {
+    //     accessorKey: "confidence",
+    //     header: "Confidence",
+    //     cell: ({ row }) => (
+    //       <Badge
+    //         variant={
+    //           row.original.confidence === "high"
+    //             ? "default"
+    //             : row.original.confidence === "medium"
+    //             ? "secondary"
+    //             : "destructive"
+    //         }
+    //       >
+    //         {row.original.confidence}
+    //       </Badge>
+    //     ),
+    //   },
       {
         accessorKey: "ingested_at",
         header: "Uploaded",

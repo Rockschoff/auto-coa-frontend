@@ -15,6 +15,7 @@ create table public.coa_data (
   test_comments text null,
   confidence text null default 'medium'::text,
   file_url text null,
+  is_imputed boolean false
   created_at timestamp with time zone null default now(),
   constraint coa_data_pkey primary key (id),
   constraint coa_data_attachment_surrogate_key_fkey foreign KEY (attachment_surrogate_key) references attachments_read (attachment_surrogate_key) on delete CASCADE,
@@ -39,12 +40,10 @@ create index IF not exists idx_coa_product_test on public.coa_data using btree (
 
 create index IF not exists idx_coa_tenant_date on public.coa_data using btree (tenant_id, coa_date) TABLESPACE pg_default;
 
-i have to create this table display this table for the said organization id
-use the supabase to get the data
-shadch for ui
-use  npx shadcn@latest add table
-to show the table, table should look good and be filtertable and options to download the table in excel format
+
+
 */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -59,6 +58,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { FileDown, Info, Search } from "lucide-react";
 import * as XLSX from "xlsx";
 
 const supabase = createClient(
@@ -66,7 +79,39 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function DataTab({ organization_id }: { organization_id: string }) {
+// Helper component for the Imputed tooltip
+const ImputedCell = ({ isImputed }: { isImputed: boolean }) => {
+  if (!isImputed) {
+    return null; // Render nothing if not imputed
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {/* We add a button for accessibility, but style it to be invisible */}
+        <button
+          type="button"
+          className="flex items-center justify-center rounded-full"
+          aria-label="Imputed value"
+        >
+          <Info className="h-4 w-4 text-blue-500" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p className="max-w-xs">
+          Values for test results of this column were inferred industry standers
+          please verify from the documents
+        </p>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
+
+export default function DataTab({
+  organization_id,
+}: {
+  organization_id: string;
+}) {
   const [rows, setRows] = useState<any[]>([]);
   const [filtered, setFiltered] = useState<any[]>([]);
   const [filterText, setFilterText] = useState("");
@@ -97,7 +142,8 @@ export default function DataTab({ organization_id }: { organization_id: string }
         const flattened = data.map((row) => ({
           ...row,
           attachment_url: row.attachments_read?.file_url ?? null,
-          attachment_file_name: row.attachments_read?.attachment_file_name ?? null,
+          attachment_file_name:
+            row.attachments_read?.attachment_file_name ?? null,
         }));
 
         setRows(flattened);
@@ -137,84 +183,152 @@ export default function DataTab({ organization_id }: { organization_id: string }
     XLSX.writeFile(workbook, "coa_data.xlsx");
   }
 
+  // Define column classes for width control
+  const commonCellStyles = "max-w-[200px] truncate";
+  const narrowCellStyles = "max-w-[100px] truncate";
+
+  // New column count for the empty state
+  const columnCount = 11;
+
   return (
-    <div className="p-4 space-y-4">
+    // TooltipProvider is needed for the tooltips to work
+    <TooltipProvider>
+      <Card className="m-4">
+        <CardHeader>
+          <CardTitle>Certificate of Analysis Data</CardTitle>
+          <CardDescription>
+            View, filter, and export all COA data for this organization.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Search and Excel Button */}
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="relative w-1/3 min-w-[300px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search all columns…"
+                className="pl-9" // Add padding for the icon
+                value={filterText}
+                onChange={(e) => handleFilter(e.target.value)}
+              />
+            </div>
 
-      {/* Search and Excel Button */}
-      <div className="flex items-center justify-between gap-4">
-        <Input
-          placeholder="Search all columns…"
-          className="w-1/3"
-          value={filterText}
-          onChange={(e) => handleFilter(e.target.value)}
-        />
+            <Button onClick={downloadExcel} variant="outline">
+              <FileDown className="h-4 w-4 mr-2" />
+              Download Excel
+            </Button>
+          </div>
 
-        <Button onClick={downloadExcel}>Download Excel</Button>
-      </div>
+          {/* Table */}
+          <div className="border rounded-md overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {/* TASK: Renamed "Confidence" to "Document Quality" */}
+                  <TableHead className={narrowCellStyles}>
+                    Doc Quality
+                  </TableHead>
+                  <TableHead className={narrowCellStyles}>Result</TableHead>
+                  <TableHead className={commonCellStyles}>Product</TableHead>
+                  <TableHead className={commonCellStyles}>Test</TableHead>
+                  {/* TASK: Added "Sender Name" column */}
+                  <TableHead className={commonCellStyles}>Sender</TableHead>
+                  <TableHead className={commonCellStyles}>Specs</TableHead>
+                  <TableHead className={commonCellStyles}>Value</TableHead>
+                  <TableHead className={commonCellStyles}>Comments</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Document</TableHead>
+                  {/* TASK: Added "is_imputed" column (just an icon for the header) */}
+                  <TableHead className="w-[50px]">Imputed</TableHead>
+                </TableRow>
+              </TableHeader>
 
-      {/* Table */}
-      <div className="border rounded-md overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Product</TableHead>
-              <TableHead>Test</TableHead>
-              <TableHead>Result</TableHead>
-              <TableHead>Specs</TableHead>
-              <TableHead>Value</TableHead>
-              <TableHead>Comments</TableHead>
-              <TableHead>Confidence</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Document</TableHead>
-            </TableRow>
-          </TableHeader>
+              <TableBody>
+                {filtered.length > 0 ? (
+                  filtered.map((row) => (
+                    <TableRow key={row.id} className="hover:bg-muted/50">
+                      {/* TASK: Renamed "Confidence" column */}
+                      <TableCell className={narrowCellStyles}>
+                        {row.confidence}
+                      </TableCell>
 
-          <TableBody>
-            {filtered.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell>{row.product_name}</TableCell>
-                <TableCell>{row.test_name}</TableCell>
-                <TableCell
-                  className={
-                    row.test_result === "pass"
-                      ? "text-green-600 font-medium"
-                      : row.test_result === "fail"
-                      ? "text-red-600 font-medium"
-                      : "text-gray-500"
-                  }
-                >
-                  {row.test_result}
-                </TableCell>
-                <TableCell>{row.test_specs}</TableCell>
-                <TableCell>{row.test_value}</TableCell>
-                <TableCell>{row.test_comments}</TableCell>
-                <TableCell>{row.confidence}</TableCell>
-                <TableCell>{row.coa_date ?? ""}</TableCell>
+                      <TableCell
+                        className={
+                          row.test_result === "pass"
+                            ? "text-green-600 font-medium"
+                            : row.test_result === "fail"
+                            ? "text-red-600 font-medium"
+                            : "text-gray-500"
+                        }
+                      >
+                        {row.test_result}
+                      </TableCell>
 
-                {/* Document Link */}
-                <TableCell>
-                  {row.attachment_url ? (
-                    <a
-                      href={row.attachment_url}
-                      target="_blank"
-                      className="text-blue-600 underline"
+                      {/* TASK: Applied width limit and truncation */}
+                      <TableCell className={commonCellStyles}>
+                        {row.product_name}
+                      </TableCell>
+                      <TableCell className={commonCellStyles}>
+                        {row.test_name}
+                      </TableCell>
+
+                      {/* TASK: Added "Sender Name" cell */}
+                      <TableCell className={commonCellStyles}>
+                        {row.sender_name}
+                      </TableCell>
+
+                      <TableCell className={commonCellStyles}>
+                        {row.test_specs}
+                      </TableCell>
+                      <TableCell className={commonCellStyles}>
+                        {row.test_value}
+                      </TableCell>
+                      <TableCell className={commonCellStyles}>
+                        {row.test_comments}
+                      </TableCell>
+
+                      <TableCell>{row.coa_date ?? ""}</TableCell>
+
+                      {/* Document Link */}
+                      <TableCell>
+                        {row.attachment_url ? (
+                          <a
+                            href={row.attachment_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline hover:text-blue-800"
+                          >
+                            {row.attachment_file_name || "View"}
+                          </a>
+                        ) : (
+                          <span className="text-gray-400">No File</span>
+                        )}
+                      </TableCell>
+
+                      {/* TASK: Added "is_imputed" cell with tooltip */}
+                      <TableCell>
+                        <ImputedCell isImputed={row.is_imputed} />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  // Improved empty state
+                  <TableRow>
+                    <TableCell
+                      colSpan={columnCount}
+                      className="h-24 text-center"
                     >
-                      {row.attachment_file_name || "View"}
-                    </a>
-                  ) : (
-                    <span className="text-gray-400">No File</span>
-                  )}
-                </TableCell>
-
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {filtered.length === 0 && (
-        <p className="text-center text-gray-500">No data found for this organization.</p>
-      )}
-    </div>
+                      {rows.length > 0
+                        ? "No results found for your search."
+                        : "No data found for this organization."}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
 }
