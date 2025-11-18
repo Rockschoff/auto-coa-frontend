@@ -41,28 +41,12 @@ create index IF not exists idx_coa_product_test on public.coa_data using btree (
 create index IF not exists idx_coa_tenant_date on public.coa_data using btree (tenant_id, coa_date) TABLESPACE pg_default;
 
 <TASK>:
-please creatis this component  with  @nivo graphs and recharts if needed that create a good overlook for each entry
-Note : that "sender_name" column is to be refered to as the "Supplier Name"
-the above tabes are in supabase
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-there is will fitlerbale visualizations here 
-the visualizaton should be like this
-the user will select the supplier_name from teh drop down the default is "All", the person can select multiple things
-the user will also be able to select the test_name from a dropdown, the values of the test names that are available should depend the supplier that is selected as well
-Note will making the graph cases where "test-result" is pass is way more that "failed results"
-also note that that "confidence" and "is_imputed" are more meta-data properties they are not be analyzed in here
-Select a few useful graph for these filters and for this table, the graphs should be beauiful
+1) Please add access title to all the graphs
+2) If the Data is not avaliable in a graph then show that like "0 failures reported" or something like this all the graphs
+3) the axis ticks should integers not fractional, because you cannot have 0.25 failures
 
 
 */
-// components/InsightsTab.tsx
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// components/InsightsTab.tsx
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// components/InsightsTab.tsx
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -177,7 +161,12 @@ const processFailureTrend = (data: CoaDataRow[]) => {
 
   return [{ id: "Failures", data: chartData.map(d => ({ x: d.x, y: d.y })) }];
 };
-
+// Helper component for "No Data" message
+  const NoDataMessage = ({ message }: { message: string }) => (
+    <div className="h-full flex items-center justify-center text-gray-500">
+      {message}
+    </div>
+  );
 // -------------------------------
 // Main Component
 // -------------------------------
@@ -256,11 +245,6 @@ export default function InsightsTab({
   }, [allData, selectedSuppliers]);
 
   // -------------------------------
-  // 3a. (REMOVED) Effect to prune selected tests
-  // -------------------------------
-  // (The problematic useEffect from lines 265-271 is now gone)
-
-  // -------------------------------
   // 3b. (NEW) Derive the *valid* selected tests
   // -------------------------------
   const validSelectedTests = useMemo(() => {
@@ -303,6 +287,19 @@ export default function InsightsTab({
     [filteredData]
   );
 
+  // Helper to determine max Y value for integer ticks
+  const maxFailures = failuresBySupplierData.reduce(
+    (max, item) => Math.max(max, item.failures),
+    0
+  );
+  
+  const maxResults = resultsByProductData.reduce((max, item) => 
+    Math.max(max, item.pass + item.fail + item.unknown),
+    0
+  );
+
+  
+
   // -------------------------------
   // Render Logic (Unchanged... except for one prop)
   // -------------------------------
@@ -333,7 +330,7 @@ export default function InsightsTab({
   return (
     <div className="p-4 md:p-8 space-y-6 w-full h-full overflow-y-scroll">
       {/* --- Filter Bar --- */}
-      <div className="text-4xl">COA Automation</div>
+      <div className="text-4xl heading-font flex"><img src="logoshield.svg" width={50} height={50}/><span>Qlear-COA</span></div>
       <Card>
         <CardHeader>
           <CardTitle>Filters</CardTitle>
@@ -369,19 +366,39 @@ export default function InsightsTab({
             </CardDescription>
           </CardHeader>
           <CardContent className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={failuresBySupplierData}
-                layout="vertical"
-                margin={{ right: 30, left: 20 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={150} />
-                <Tooltip wrapperClassName="rounded-md border bg-background p-2 shadow-sm" />
-                <Bar dataKey="failures" fill="#ef4444" name="Failures" />
-              </BarChart>
-            </ResponsiveContainer>
+            {failuresBySupplierData.length === 0 ? (
+              <NoDataMessage message="0 failures reported for the selected filters." />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={failuresBySupplierData}
+                  layout="vertical"
+                  margin={{ right: 30, left: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  {/* X-Axis (Failures Count) - Use floor/ceil to ensure integer ticks */}
+                  <XAxis 
+                    type="number" 
+                    label={{ value: 'Count of Failures', position: 'bottom', dy: 4 }}
+                    // Force domain to include the max value and tick count to be integer
+                    domain={[0, Math.ceil(maxFailures) || 1]}
+                    tickCount={Math.ceil(maxFailures) + 1}
+                    // Force ticks to be integers
+                    tickFormatter={(tick) => String(Math.floor(tick))}
+                  />
+                  {/* Y-Axis (Supplier) */}
+                  <YAxis 
+                    dataKey="name" 
+                    type="category" 
+                    width={150} 
+                    label={{ value: 'Supplier Name', angle: -90, position: 'left', dx: -5 }}
+                  />
+                  <Tooltip wrapperClassName="rounded-md border bg-background p-2 shadow-sm" />
+                  <Legend />
+                  <Bar dataKey="failures" fill="#ef4444" name="Failures" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -394,21 +411,37 @@ export default function InsightsTab({
             </CardDescription>
           </CardHeader>
           <CardContent className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={resultsByProductData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip wrapperClassName="rounded-md border bg-background p-2 shadow-sm" />
-                <Legend />
-                <Bar dataKey="pass" stackId="a" fill="#22c55e" name="Pass" />
-                <Bar dataKey="fail" stackId="a" fill="#ef4444" name="Fail" />
-                <Bar dataKey="unknown" stackId="a" fill="#6b7280" name="Unknown" />
-              </BarChart>
-            </ResponsiveContainer>
+            {resultsByProductData.length === 0 ? (
+              <NoDataMessage message="No test results reported for the selected filters." />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={resultsByProductData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  {/* X-Axis (Product) */}
+                  <XAxis 
+                    dataKey="name" 
+                    label={{ value: 'Product Name', position: 'bottom', dy: 4 }}
+                  />
+                  {/* Y-Axis (Count) - Use floor/ceil to ensure integer ticks */}
+                  <YAxis 
+                    label={{ value: 'Count of Results', angle: -90, position: 'left', dx: 0 }}
+                    // Force domain to include the max value and tick count to be integer
+                    domain={[0, Math.ceil(maxResults) || 1]}
+                    tickCount={Math.ceil(maxResults) + 1}
+                    // Force ticks to be integers
+                    tickFormatter={(tick) => String(Math.floor(tick))}
+                  />
+                  <Tooltip wrapperClassName="rounded-md border bg-background p-2 shadow-sm" />
+                  <Legend />
+                  <Bar dataKey="pass" stackId="a" fill="#22c55e" name="Pass" />
+                  <Bar dataKey="fail" stackId="a" fill="#ef4444" name="Fail" />
+                  <Bar dataKey="unknown" stackId="a" fill="#6b7280" name="Unknown" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -421,14 +454,17 @@ export default function InsightsTab({
             </CardDescription>
           </CardHeader>
           <CardContent className="h-[400px]">
-            {failureTrendData.length > 0 && failureTrendData[0].data.length > 1 ? (
+            {/* Check if there's any data point at all */}
+            {failureTrendData.length === 0 || failureTrendData[0].data.length === 0 ? (
+              <NoDataMessage message="0 failures reported over time for the selected filters." />
+            ) : (
               <ResponsiveLine
                 data={failureTrendData}
                 margin={{ top: 20, right: 60, bottom: 50, left: 60 }}
                 xScale={{ type: "point" }}
                 yScale={{
                   type: "linear",
-                  min: "auto",
+                  min: 0, // Set min to 0
                   max: "auto",
                   stacked: false,
                   reverse: false,
@@ -439,7 +475,7 @@ export default function InsightsTab({
                   tickSize: 5,
                   tickPadding: 5,
                   tickRotation: 0,
-                  legend: "Month",
+                  legend: "Month", // Axis Title
                   legendOffset: 36,
                   legendPosition: "middle",
                 }}
@@ -447,9 +483,15 @@ export default function InsightsTab({
                   tickSize: 5,
                   tickPadding: 5,
                   tickRotation: 0,
-                  legend: "Count of Failures",
+                  legend: "Count of Failures", // Axis Title
                   legendOffset: -40,
                   legendPosition: "middle",
+                  // Force ticks to be integers
+                  format: (value) => Math.floor(value) === value ? value : '', 
+                  // Use a fixed tick value count to prevent fractional ticks, 
+                  // as Nivo doesn't have a simple `tickFormatter` on its own axisLeft.
+                  // Setting a high tick values count works well for common integer ranges.
+                  tickValues: 10, 
                 }}
                 colors={["#ef4444"]}
                 pointSize={10}
@@ -485,10 +527,6 @@ export default function InsightsTab({
                   },
                 }}
               />
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-500">
-                Not enough data to display a trend.
-              </div>
             )}
           </CardContent>
         </Card>

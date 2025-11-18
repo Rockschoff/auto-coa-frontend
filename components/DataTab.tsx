@@ -99,8 +99,7 @@ const ImputedCell = ({ isImputed }: { isImputed: boolean }) => {
       </TooltipTrigger>
       <TooltipContent>
         <p className="max-w-xs">
-          Values for test results of this column were inferred industry standers
-          please verify from the documents
+          Values in this column were inferred from industry standards. Please verify them against the source documents.
         </p>
       </TooltipContent>
     </Tooltip>
@@ -187,22 +186,30 @@ export default function DataTab({
   const commonCellStyles = "max-w-[200px] truncate";
   const narrowCellStyles = "max-w-[100px] truncate";
 
-  // New column count for the empty state
-  const columnCount = 11;
+  // New column count for the empty state (11 original columns + 1 new column = 12 total)
+  const columnCount = 12;
 
   return (
     // TooltipProvider is needed for the tooltips to work
     <TooltipProvider>
+      {/* The Card component itself is typically padded (via its parent layout/m-4).
+        We'll focus on controlling the space inside it.
+      */}
       <Card className="m-4">
-        <CardHeader>
-          <CardTitle>Certificate of Analysis Data</CardTitle>
-          <CardDescription>
-            View, filter, and export all COA data for this organization.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        
+        <CardHeader 
+          className="sticky top-0 z-10 bg-background border-b"
+        >
+          {/* Apply vertical padding only here, not on the CardHeader itself */}
+          <div className="pt-6 pb-2"> 
+            <CardTitle>Certificate of Analysis Data</CardTitle>
+            <CardDescription>
+              View, filter, and export all COA data for this organization.
+            </CardDescription>
+          </div>
+
           {/* Search and Excel Button */}
-          <div className="flex items-center justify-between gap-4 mb-4">
+          <div className="flex items-center justify-between gap-4 pb-4">
             <div className="relative w-1/3 min-w-[300px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -218,28 +225,32 @@ export default function DataTab({
               Download Excel
             </Button>
           </div>
-
-          {/* Table */}
-          <div className="border rounded-md overflow-x-auto">
+        </CardHeader>
+        
+        {/* TASK FIX: Remove padding from CardContent (p-0) and 
+          apply the actual scroll to the inner div to ensure the sticky header 
+          correctly covers the scrollable content.
+        */}
+        <CardContent className="p-0">
+          {/* Table Container - Added vertical padding (py-4), fixed height (h-[70vh]), and scroll (overflow-y-auto) */}
+          <div className="px-6 pb-4 overflow-x-auto h-[70vh] overflow-y-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  {/* TASK: Renamed "Confidence" to "Document Quality" */}
-                  <TableHead className={narrowCellStyles}>
+                  {/* The TableHead cells also need to be sticky to stay with the CardHeader/Filters */}
+                  <TableHead className={`${narrowCellStyles} sticky top-0 bg-background z-[5]`}>
                     Doc Quality
                   </TableHead>
-                  <TableHead className={narrowCellStyles}>Result</TableHead>
-                  <TableHead className={commonCellStyles}>Product</TableHead>
-                  <TableHead className={commonCellStyles}>Test</TableHead>
-                  {/* TASK: Added "Sender Name" column */}
-                  <TableHead className={commonCellStyles}>Sender</TableHead>
-                  <TableHead className={commonCellStyles}>Specs</TableHead>
-                  <TableHead className={commonCellStyles}>Value</TableHead>
-                  <TableHead className={commonCellStyles}>Comments</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Document</TableHead>
-                  {/* TASK: Added "is_imputed" column (just an icon for the header) */}
-                  <TableHead className="w-[50px]">Imputed</TableHead>
+                  <TableHead className={`${narrowCellStyles} sticky top-0 bg-background z-[5]`}>Result</TableHead>
+                  <TableHead className={`${commonCellStyles} sticky top-0 bg-background z-[5]`}>Product</TableHead>
+                  <TableHead className={`${commonCellStyles} sticky top-0 bg-background z-[5]`}>Test</TableHead>
+                  <TableHead className={`${commonCellStyles} sticky top-0 bg-background z-[5]`}>Sender</TableHead>
+                  <TableHead className={`${commonCellStyles} sticky top-0 bg-background z-[5]`}>Specs</TableHead>
+                  <TableHead className={`${commonCellStyles} sticky top-0 bg-background z-[5]`}>Value</TableHead>
+                  <TableHead className={`${commonCellStyles} sticky top-0 bg-background z-[5]`}>Comments</TableHead>
+                  <TableHead className={`sticky top-0 bg-background z-[5]`}>Date</TableHead>
+                  <TableHead className={`sticky top-0 bg-background z-[5]`}>Document</TableHead>
+                  <TableHead className={`w-[50px] sticky top-0 bg-background z-[5]`}>Imputed</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -247,7 +258,6 @@ export default function DataTab({
                 {filtered.length > 0 ? (
                   filtered.map((row) => (
                     <TableRow key={row.id} className="hover:bg-muted/50">
-                      {/* TASK: Renamed "Confidence" column */}
                       <TableCell className={narrowCellStyles}>
                         {row.confidence}
                       </TableCell>
@@ -264,7 +274,6 @@ export default function DataTab({
                         {row.test_result}
                       </TableCell>
 
-                      {/* TASK: Applied width limit and truncation */}
                       <TableCell className={commonCellStyles}>
                         {row.product_name}
                       </TableCell>
@@ -272,7 +281,6 @@ export default function DataTab({
                         {row.test_name}
                       </TableCell>
 
-                      {/* TASK: Added "Sender Name" cell */}
                       <TableCell className={commonCellStyles}>
                         {row.sender_name}
                       </TableCell>
@@ -315,7 +323,7 @@ export default function DataTab({
                   // Improved empty state
                   <TableRow>
                     <TableCell
-                      colSpan={columnCount}
+                      colSpan={columnCount} 
                       className="h-24 text-center"
                     >
                       {rows.length > 0

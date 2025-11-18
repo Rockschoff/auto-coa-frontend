@@ -120,3 +120,25 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+@font-face {
+    font-family: 'Copperplate Gothic Bold';
+    src: url('/fonts/Copperplate Gothic Bold V2.woff2') format('woff2'),
+         url('/fonts/Copperplate Gothic Bold V2.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Bell-MT';
+    src: url('/fonts/Bell MT.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
+
+/* Fallback font if Copperplate Gothic Bold isn't available */
+.heading-font {
+    font-family: 'Copperplate Gothic Bold', 'Copperplate Gothic', Copperplate, serif;
+}
+

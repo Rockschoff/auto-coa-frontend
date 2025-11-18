@@ -33,7 +33,7 @@ function MainApp({ session }: { session: Session | null }) {
         }`}
       >
         <div className="flex items-center justify-between p-3 border-b">
-          {!collapsed && <h2 className="font-semibold text-lg">Dashboard</h2>}
+          {!collapsed && <h2 className="font-semibold text-lg">Lyons Magnus</h2>}
           <Button
             variant="ghost"
             size="icon"
