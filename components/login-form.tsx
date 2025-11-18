@@ -16,7 +16,7 @@ export function LoginForm({
 }: React.ComponentProps<"form">) {
   // Use mock credentials since environment variables are not accessible client-side in this context
   const correctUserEmail = process.env.NEXT_PUBLIC_EMAIL 
-  const correctPassword = process.env.NEXT_PUBLIC_PASSWORD 
+  const correctPassword = process.env.NEXT_PUBLIC_ANON_KEY 
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,7 +33,7 @@ export function LoginForm({
       // 2. Redirect to the home page, which will now see the authenticated session via useMockSession()
       window.location.href = '/'; 
     } else {
-      setError('Invalid email or password. ' + correctPassword+ correctUserEmail);
+      setError('Invalid email or password. ');
     }
   };
 
