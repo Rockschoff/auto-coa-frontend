@@ -40,11 +40,7 @@ create index IF not exists idx_coa_product_test on public.coa_data using btree (
 
 create index IF not exists idx_coa_tenant_date on public.coa_data using btree (tenant_id, coa_date) TABLESPACE pg_default;
 
-<TASK>:
-1) Please add access title to all the graphs
-2) If the Data is not avaliable in a graph then show that like "0 failures reported" or something like this all the graphs
-3) the axis ticks should integers not fractional, because you cannot have 0.25 failures
-
+<TASK> : Axis ticks , Titles , labels should not overlap on the graphs here please fix that
 
 */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -394,7 +390,11 @@ export default function InsightsTab({
                     label={{ value: 'Supplier Name', angle: -90, position: 'left', dx: -5 }}
                   />
                   <Tooltip wrapperClassName="rounded-md border bg-background p-2 shadow-sm" />
-                  <Legend />
+                  <Legend 
+                    align="center"
+                    verticalAlign="top"
+                    height={36} // Give it enough vertical space
+                  />
                   <Bar dataKey="failures" fill="#ef4444" name="Failures" />
                 </BarChart>
               </ResponsiveContainer>
@@ -435,7 +435,11 @@ export default function InsightsTab({
                     tickFormatter={(tick) => String(Math.floor(tick))}
                   />
                   <Tooltip wrapperClassName="rounded-md border bg-background p-2 shadow-sm" />
-                  <Legend />
+                  <Legend 
+                    align="center"
+                    verticalAlign="top"
+                    height={36} // Give it enough vertical space
+                  />
                   <Bar dataKey="pass" stackId="a" fill="#22c55e" name="Pass" />
                   <Bar dataKey="fail" stackId="a" fill="#ef4444" name="Fail" />
                   <Bar dataKey="unknown" stackId="a" fill="#6b7280" name="Unknown" />
