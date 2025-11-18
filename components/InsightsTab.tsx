@@ -326,7 +326,7 @@ export default function InsightsTab({
   return (
     <div className="p-4 md:p-8 space-y-6 w-full h-full overflow-y-scroll">
       {/* --- Filter Bar --- */}
-      <div className="text-4xl heading-font flex"><img src="logoshield.svg" width={50} height={50}/><span>Qlear-COA</span></div>
+      <div className="text-4xl heading-font text-black flex justify-center"><img src="logoshield.svg" width={50} height={50}/><span>Clear-COA</span></div>
       <Card>
         <CardHeader>
           <CardTitle>Filters</CardTitle>
