@@ -141,6 +141,17 @@ export default function Home() {
   // const { data: session, status } = useSession(); // keep all the commeted parts they are important
   const {data : session , status} = useMockSession() // defined use mock session
 
+  // ---------------------------------
+  // TASK IMPLEMENTATION: Auto-Redirect
+  // ---------------------------------
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      // Automatically redirect to the login page
+      window.location.href = "/login";
+    }
+  }, [status]);
+
+
   if (status === "loading") {
     return (
       <main className="flex items-center justify-center h-screen bg-gray-100">
@@ -157,13 +168,11 @@ export default function Home() {
     );
   }
   
-  // if status is "unauthenticated"
+  // If status is "unauthenticated", the useEffect hook above handles the redirect.
+  // We return a small, temporary element to prevent a blank screen while the redirect occurs.
   return (
     <main className="flex flex-col items-center justify-center h-screen">
-      <h1 className="text-2xl font-semibold mb-3">Access Denied</h1>
-      <p className="mb-4 text-gray-700">You must be signed in to view this application.</p>
-      {/* We use window.location to simulate the redirect to the mock login page */}
-      <Button onClick={() => window.location.href = "/login"}>Go to Login Screen</Button>
+      <div>Redirecting to login...</div>
     </main>
   );
 }
